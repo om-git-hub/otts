@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="om">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oromo Syllabifier</title>
+
+<!-- Link to external CSS -->
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div class="card">
+
+    <h1>Oromo Syllabifier</h1>
+
+    <input id="word" placeholder="Jecha galchi...">
+
+    <div class="row">
+        <button id="go">Split</button>
+        <button id="clear">Clear</button>
+    </div>
+
+    <pre id="result"></pre>
+    <pre id="saga1"></pre>
+    <pre id="saga2"></pre>
+    <pre id="saga3"></pre>
+    <pre id="count"></pre>
+    <button onclick="playSaga3Audio()" 
+style="width:100%;margin-top:12px;padding:14px;border-radius:12px;
+background:#0a7cff;color:white;font-size:17px;font-weight:600;">
+🔊 Play Saga3 Audio
+</button>
+<!-- New textarea for showing file names -->  
+<textarea id="audioFileNames" rows="5" readonly placeholder="Maqaa file .mp3 argachuuf..."></textarea>
+
+</div>
+
+<!-- External JS files -->
+<script src="result.js"></script>
+<script src="saga1.js"></script>
+<script src="saga2.js"></script>
+<script src="saga3.js"></script>
+<script src="audio.js"></script>
+
+</body>
+</html>
