@@ -1,63 +1,93 @@
+// audio.js
+
 async function playSaga3Audio() {  
     let text = document.getElementById("saga3").innerText;  
     if (!text) return;  
 
-    let words = text.split(/\s+/).filter(Boolean);  
+    let words = text
+        .split(/\s+/)
+        .filter(w => w.trim() !== "");  
+
     let finalPieces = [];  
 
     words.forEach((word, wIndex) => {
+        word = word.replace(/\s+/g, "-");
 
-        // tokenization: - , * addaan baasna
-        let tokens = word.split(/(-|\*)/).filter(Boolean);
+        let starIndex = word.indexOf("*");
 
-        let pieces = [];
+        // split by - and *
+        let partsRaw = word.split(/[-*]/).filter(p => p.trim() !== "");
 
-        for (let i = 0; i < tokens.length; i++) {
-            let t = tokens[i];
+        partsRaw.forEach((piece, i) => {
+            let cleaned = piece.replace(/[!?;:"]/g, "").trim();
 
-            if (t === "-" || t === "*") continue;
+            if (cleaned.endsWith(".-.")) cleaned = cleaned.slice(0, -3) + "..";
 
-            let cleaned = t.replace(/[!?;:"]/g, "").trim();
+            // count before *
+            let isBeforeStar = false;
 
-            let prev = tokens[i - 1];
-            let next = tokens[i + 1];
+            if(starIndex !== -1){
+                let before = word.substring(0, starIndex);
+                let countBefore = before.split(/[-*]/)
+                    .filter(p => p.trim() !== "").length;
 
-            let starts = prev === "-" || prev === "*";
-            let ends   = next === "-";
+                if(i === countBefore-1) isBeforeStar = true; // ⭐
+            }
 
-            // ⭐ yoo next "*" ta'e → dhumaa hin qabaatu
-            if (next === "*") ends = false;
+            // ⭐ * dura = MIDDLE
+            if(isBeforeStar){
+                if (!cleaned.startsWith("-")) cleaned = "-" + cleaned;
+            }
 
-            if (starts) cleaned = "-" + cleaned;
-            if (ends)   cleaned = cleaned + "-";
+            // seerota duraan
+            else if (i === 0 && wIndex > 0) {
+                cleaned = cleaned.replace(/^-+/, "");  
+                if (!cleaned.endsWith("-")) cleaned += "-";
+            } 
+            else if (i === 0 && wIndex === 0) {
+                if (!cleaned.endsWith("-")) cleaned += "-";
+            } 
+            else if (i === partsRaw.length - 1) {
+                if (!cleaned.startsWith("-")) cleaned = "-" + cleaned;
+            } 
+            else {
+                if (!cleaned.startsWith("-")) cleaned = "-" + cleaned;
+                if (!cleaned.endsWith("-")) cleaned += "-";
+            }
 
-            // jalqaba jecha
-            if (i === 0 && !cleaned.endsWith("-")) cleaned += "-";
-
-            // dhuma jecha
-            if (i === tokens.length - 1 && !cleaned.startsWith("-"))
-                cleaned = "-" + cleaned;
-
-            pieces.push(cleaned);
-        }
-
-        finalPieces.push(...pieces);
+            finalPieces.push(cleaned);
+        });
     });
 
+    // 🔥 URL BUILD BASED ON RULES
     let urls = finalPieces.map(p => {
+
+        if(p.endsWith(".-.")) p = p.slice(0, -3);
+        if(p.endsWith(".-")) p = p.slice(0, -2) + "-";
+        if(p.endsWith("."))  p = p.slice(0, -1);
+
+        let folder = "";
+
         let starts = p.startsWith("-");
         let ends   = p.endsWith("-");
 
-        let folder = "";
-        if (!starts && ends) folder = "sa";
-        else if (starts && ends) folder = "se";
-        else if (starts && !ends) folder = "si";
+        if(!starts && ends){
+            folder = "sa";   
+        }
+        else if(starts && ends){
+            folder = "se";   
+        }
+        else if(starts && !ends){
+            folder = "si";   
+        }
 
         return folder + "/" + p + ".mp3";
     });
 
-    document.getElementById("audioFileNames").value = urls.join("\n");
-    await mergeAndPlay(urls);
+    const fileNameArea = document.getElementById("audioFileNames");  
+    if (fileNameArea) fileNameArea.value = urls.join("\n");  
+
+    await mergeAndPlay(urls);  
 }
 
 async function mergeAndPlay(urls) {  
@@ -111,14 +141,7 @@ async function mergeAndPlay(urls) {
     // 2.0 = double volume
     // 3.0 = very loud (careful)
 
-    // 👃 Nasal sound removal - Notch filter at 500 Hz
-    const nasalFilter = ctx.createBiquadFilter();
-    nasalFilter.type = "notch";
-    nasalFilter.frequency.value = 500; // adjust frequency if needed
-    nasalFilter.Q.value = 100; // quality factor, narrow notch
-
-    source.connect(nasalFilter);
-    nasalFilter.connect(gainNode);
+    source.connect(gainNode);
     gainNode.connect(ctx.destination);
 
     source.start();  
